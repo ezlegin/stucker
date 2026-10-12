@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TrackerForm } from "@/components/TrackerForm";
+import { TrackerForm } from "@/components/forms/TrackerForm";
 
 export function AddTrackDialog() {
   const [open, setOpen] = useState(false);
@@ -17,7 +17,7 @@ export function AddTrackDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button size={"lg"}>
           <Plus className="size-4" />
           Add Track
         </Button>

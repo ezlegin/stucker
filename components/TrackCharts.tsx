@@ -1,21 +1,5 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Pie,
-  PieChart,
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -32,16 +16,31 @@ import {
 } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  PieChart as PieIcon,
+  Radar as RadarIcon,
+  TrendingUp,
+} from "lucide-react";
 import { useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 type Stat = { label: string; date: string; duration: number };
 type LessonStat = { lesson: string; duration: number };
 
 const chartConfig = {
-  duration: {
-    label: "Hours",
-    color: "var(--chart-1)",
-  },
+  duration: { label: "Hours", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const lessonColor: Record<string, string> = {
@@ -67,21 +66,18 @@ export function TrackCharts({
   monthly: Stat[];
   lessons: LessonStat[];
 }) {
-  // ⭐ single source of truth for the duration range
   const [range, setRange] = useState<"weekly" | "monthly">("weekly");
 
   const totalWeek = weekly.reduce((s, d) => s + d.duration, 0);
   const totalMonth = monthly.reduce((s, d) => s + d.duration, 0);
 
   const activeData = range === "weekly" ? weekly : monthly;
-  const activeSubtitle =
-    range === "weekly"
-      ? `${totalWeek.toFixed(1)}h this week`
-      : `${totalMonth.toFixed(1)}h in 5 weeks`;
+  const activeTotal = range === "weekly" ? totalWeek : totalMonth;
+  const activeCaption = range === "weekly" ? "this week" : "over 5 weeks";
+  const hasDuration = activeData.some((d) => d.duration > 0);
 
   return (
     <div className="space-y-6">
-      {/* Duration Chart Card */}
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
@@ -90,7 +86,6 @@ export function TrackCharts({
               <CardDescription>Hours studied over time</CardDescription>
             </div>
 
-            {/* Only TabsList here — no TabsContent */}
             <Tabs
               value={range}
               onValueChange={(v) => setRange(v as "weekly" | "monthly")}
@@ -105,59 +100,76 @@ export function TrackCharts({
         </CardHeader>
 
         <CardContent>
-          {/* Conditionally render the chart — no TabsContent needed */}
-          <DurationChartBlock data={activeData} subtitle={activeSubtitle} />
+          <div className="mb-5 flex items-baseline gap-2">
+            <span className="text-3xl font-semibold tracking-tight tabular-nums">
+              {activeTotal.toFixed(1)}
+            </span>
+            <span className="text-sm text-muted-foreground">hours</span>
+            <span className="ml-1 text-xs text-muted-foreground">
+              {activeCaption}
+            </span>
+          </div>
+
+          {hasDuration ? (
+            <ChartContainer config={chartConfig} className="h-56 w-full">
+              <BarChart accessibilityLayer data={activeData}>
+                <CartesianGrid
+                  vertical={false}
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  fontSize={11}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  width={28}
+                  fontSize={11}
+                  tickFormatter={(v) => `${v}h`}
+                />
+                <ChartTooltip
+                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
+                  content={<ChartTooltipContent indicator="line" />}
+                />
+                <Bar
+                  dataKey="duration"
+                  fill="var(--color-duration)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={36}
+                />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <ChartEmptyState
+              message={
+                range === "weekly"
+                  ? "No sessions logged this week"
+                  : "No sessions logged in the last 5 weeks"
+              }
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Lessons Studied Card */}
       <LessonsCard lessons={lessons} />
     </div>
   );
 }
 
 /* ------------------------------------------------------------- */
-/* Duration bar chart                                            */
+/* Duration bar chart helper — keep slot for future use          */
 /* ------------------------------------------------------------- */
 
-function DurationChartBlock({
-  data,
-  subtitle,
-}: {
-  data: Stat[];
-  subtitle: string;
-}) {
+function ChartEmptyState({ message }: { message: string }) {
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
-      <ChartContainer config={chartConfig} className="h-60 w-full">
-        <BarChart accessibilityLayer data={data}>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
-          <XAxis
-            dataKey="label"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-          />
-          <YAxis
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            width={32}
-            tickFormatter={(v) => `${v}h`}
-          />
-          <ChartTooltip
-            cursor={{ fill: "var(--muted)", opacity: 0.4 }}
-            content={<ChartTooltipContent indicator="line" />}
-          />
-          <Bar
-            dataKey="duration"
-            fill="var(--color-duration)"
-            radius={[6, 6, 0, 0]}
-            maxBarSize={40}
-          />
-        </BarChart>
-      </ChartContainer>
+    <div className="flex h-56 flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/20">
+      <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );
 }
@@ -167,7 +179,6 @@ function DurationChartBlock({
 /* ------------------------------------------------------------- */
 
 function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
-  // ⭐ single source of truth
   const [view, setView] = useState<"pie" | "radar">("pie");
 
   const total = lessons.reduce((s, l) => s + l.duration, 0);
@@ -203,6 +214,7 @@ function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
 
   const top = pieData[0];
   const topPct = total > 0 && top ? (top.duration / total) * 100 : 0;
+  const maxLesson = Math.max(...pieData.map((l) => l.duration), 1);
 
   if (lessons.length === 0) {
     return (
@@ -212,9 +224,7 @@ function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
           <CardDescription>Breakdown for the current week</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            No lessons studied this week.
-          </p>
+          <ChartEmptyState message="No lessons studied this week" />
         </CardContent>
       </Card>
     );
@@ -222,7 +232,6 @@ function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
 
   return (
     <Card className="flex flex-col">
-      {/* ⭐ Header: title + toggle side-by-side */}
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -230,22 +239,26 @@ function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
             <CardDescription>Breakdown for the current week</CardDescription>
           </div>
 
-          {/* Only TabsList here — no TabsContent. */}
           <Tabs
             value={view}
             onValueChange={(v) => setView(v as "pie" | "radar")}
             className="w-auto"
           >
             <TabsList>
-              <TabsTrigger value="pie">Pie</TabsTrigger>
-              <TabsTrigger value="radar">Radar</TabsTrigger>
+              <TabsTrigger value="pie" className="gap-1.5">
+                <PieIcon className="size-3.5" />
+                Pie
+              </TabsTrigger>
+              <TabsTrigger value="radar" className="gap-1.5">
+                <RadarIcon className="size-3.5" />
+                Radar
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </CardHeader>
 
       <CardContent className="flex-1">
-        {/* ⭐ Conditionally render the chart — no TabsContent needed */}
         {view === "pie" && (
           <ChartContainer
             config={pieConfig}
@@ -296,50 +309,51 @@ function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
                   />
                 }
               />
-              <PolarAngleAxis dataKey="label" />
-              <PolarGrid />
+              <PolarAngleAxis dataKey="label" fontSize={11} />
+              <PolarGrid stroke="var(--border)" />
               <Radar
                 dataKey="duration"
                 fill="var(--color-duration)"
-                fillOpacity={0.6}
+                fillOpacity={0.55}
+                stroke="var(--color-duration)"
               />
             </RadarChart>
           </ChartContainer>
         )}
 
-        {/* Progress breakdown (shared) */}
-        <div className="mt-6 space-y-4">
-          {pieData.map((l) => {
-            const max = Math.max(...pieData.map((x) => x.duration), 1);
-            return (
-              <div key={l.lesson} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="size-2.5 rounded-full"
-                      style={{ background: `var(--color-${l.lesson})` }}
-                    />
-                    <span className="font-medium">{l.label}</span>
-                  </div>
-                  <Badge variant="secondary" className="font-mono text-xs">
-                    {l.duration.toFixed(1)}h
-                  </Badge>
+        <div className="mt-6 space-y-3.5">
+          {pieData.map((l) => (
+            <div key={l.lesson} className="space-y-1.5">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="size-2.5 rounded-full"
+                    style={{ background: `var(--color-${l.lesson})` }}
+                  />
+                  <span className="font-medium">{l.label}</span>
                 </div>
-                <Progress value={(l.duration / max) * 100} className="h-1.5" />
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {l.duration.toFixed(1)}h ·{" "}
+                  {total > 0 ? ((l.duration / total) * 100).toFixed(0) : 0}%
+                </span>
               </div>
-            );
-          })}
+              <Progress
+                value={(l.duration / maxLesson) * 100}
+                className="h-1.5"
+              />
+            </div>
+          ))}
         </div>
       </CardContent>
 
-      <CardFooter className="flex-col gap-2 text-sm">
+      <CardFooter className="flex-col items-start gap-1.5 border-t bg-muted/20 pt-4 text-sm">
         {top && (
           <div className="flex items-center gap-2 leading-none font-medium">
+            <TrendingUp className="size-4 text-chart-3" />
             {top.label} leads with {topPct.toFixed(0)}%
-            <TrendingUp className="h-4 w-4" />
           </div>
         )}
-        <div className="leading-none text-muted-foreground">
+        <div className="text-xs leading-none text-muted-foreground">
           {total.toFixed(1)} total hours studied
         </div>
       </CardFooter>

@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TrackerForm } from "@/components/TrackerForm";
+import { TrackerForm } from "@/components/forms/TrackerForm";
 import type { TrackerFormType } from "@/lib/vlidationSchemas";
 
 type Track = TrackerFormType & { id: number };
