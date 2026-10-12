@@ -5,9 +5,30 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../lib/generated/prisma"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
+}
+
+enum Lessons {
+  math
+  geometry
+  physics
+  chemistry
+}
+
+model Track {
+  id       Int      @id @default(autoincrement())
+  date     DateTime
+  from     String
+  duration Float
+  to       String
+  lesson   Lessons
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
 }

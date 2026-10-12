@@ -1,45 +1,47 @@
-"use client";
-
-import { TrackerForm } from "@/components/TrackerForm";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { AddTrackDialog } from "@/components/AddTrackDialog";
+import { TracksTable } from "@/components/TracksTable";
+import { TrackCharts } from "@/components/TrackCharts";
 import { Separator } from "@/components/ui/separator";
-import { Plus } from "lucide-react";
+import { getTracks } from "@/actions/tracker";
+import {
+  getWeeklyStats,
+  getMonthlyStats,
+  getLessonsThisWeek,
+} from "@/lib/tracker";
 
-const page = () => {
+export default async function Page() {
+  const [tracksRes, weeklyRes, monthlyRes, lessonsRes] = await Promise.all([
+    getTracks(),
+    getWeeklyStats(),
+    getMonthlyStats(),
+    getLessonsThisWeek(),
+  ]);
+
+  const tracks = tracksRes.success ? tracksRes.data : [];
+  const weekly = weeklyRes.success ? weeklyRes.data : [];
+  const monthly = monthlyRes.success ? monthlyRes.data : [];
+  const lessons = lessonsRes.success ? lessonsRes.data : [];
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-semibold text-3xl">Welcome, Alireza!</h1>
-          <p className="text-muted-foreground text-sm">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Welcome, Alireza!
+          </h1>
+          <p className="text-sm text-muted-foreground">
             What did you do today?
           </p>
         </div>
-        <div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus />
-                Add Track
-              </Button>
-            </DialogTrigger>
-            <DialogContent showCloseButton={false}>
-              <DialogTitle className="sr-only">Add Your New Track</DialogTitle>
-              <TrackerForm />
-            </DialogContent>
-          </Dialog>
-        </div>
+        <AddTrackDialog />
       </div>
 
       <Separator />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <TracksTable tracks={tracks} />
+        <TrackCharts weekly={weekly} monthly={monthly} lessons={lessons} />
+      </div>
     </div>
   );
-};
-
-export default page;
+}
