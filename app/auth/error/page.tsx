@@ -1,4 +1,4 @@
-import { ArrowLeft, RefreshCw, ShieldAlert } from "lucide-react";
+import { RefreshCw, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
