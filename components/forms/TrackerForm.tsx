@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { TrackerFormType, trackerFormSchema } from "@/lib/vlidationSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
+import { addHours, format } from "date-fns";
 import {
   CalendarIcon,
   ChevronDownIcon,
@@ -38,6 +38,24 @@ type TrackerFormProps = {
   onSuccess?: () => void;
 };
 
+function getDefaultTimes() {
+  const from = new Date();
+  const to = addHours(new Date(), 2);
+
+  return {
+    from: formatTime(from),
+    to: formatTime(to),
+  };
+}
+
+function formatTime(d: Date) {
+  return d.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
   const isEdit = Boolean(initialData?.id);
 
@@ -47,8 +65,7 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
   const form = useForm<TrackerFormType>({
     resolver: zodResolver(trackerFormSchema),
     defaultValues: initialData ?? {
-      from: new Date().toLocaleTimeString("en-GB").slice(0, 5),
-      to: new Date().toLocaleTimeString("en-GB").slice(0, 5),
+      ...getDefaultTimes(),
       date: new Date(),
       lessonId: "",
     },
