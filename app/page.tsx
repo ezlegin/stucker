@@ -459,8 +459,8 @@ function Footer() {
   return (
     <footer className="border-t border-border/60">
       <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
-          <div>
+        <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
+          <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 font-semibold">
               <div className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <BookOpen className="size-3.5" />
@@ -470,6 +470,36 @@ function Footer() {
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
               A quiet place to track your study sessions. Free forever.
             </p>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium">Pages</h3>
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link
+                  href="/about-us"
+                  className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                >
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/terms"
+                  className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                >
+                  Terms & Privacy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/login"
+                  className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                >
+                  Sign in
+                </Link>
+              </li>
+            </ul>
           </div>
 
           <div>
@@ -502,7 +532,7 @@ function Footer() {
         <Separator className="my-8" />
 
         <div className="flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row">
-          <Suspense fallback={<Skeleton className="w-40 h-4 " />}>
+          <Suspense fallback={<Skeleton className="h-4 w-40" />}>
             <CopyrightNotice />
           </Suspense>
           <p className="flex items-center gap-1.5">
