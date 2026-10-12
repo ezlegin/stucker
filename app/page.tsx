@@ -7,6 +7,7 @@ import {
   Mail,
   Sparkles,
   TrendingUp,
+  Users,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,14 +21,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { prisma } from "@/lib/prisma";
 import { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const CREATOR_EMAIL = "ezlegini.ir@gmail.com";
 
-export default function HomePage() {
+export default async function HomePage() {
   return (
     <main className="relative overflow-x-hidden">
       <AmbientBackground />
@@ -104,17 +106,39 @@ function Nav() {
 /* ------------------------------------------------------------- */
 /* Hero                                                          */
 /* ------------------------------------------------------------- */
+async function UserCount() {
+  const count = (await prisma.user.count()) + 1000;
+  return <>{count.toLocaleString()}</>;
+}
+
+function UserCountSkeleton() {
+  return (
+    <span className="inline-block h-[1em] w-12 animate-pulse rounded bg-muted align-middle" />
+  );
+}
 
 function Hero() {
   return (
     <section className="mx-auto max-w-6xl px-6 pt-16 pb-20 text-center md:pt-24 md:pb-28">
-      <Badge
-        variant="outline"
-        className="mb-6 gap-1.5 rounded-full text-green-800 border-green-500 bg-green-500/20 px-3 py-3 font-semibold text-xs"
-      >
-        <Sparkles className="size-3" />
-        100% free — forever
-      </Badge>
+      <div className="flex justify-center gap-2 mb-6">
+        <Badge
+          variant="outline"
+          className="gap-1.5 rounded-full text-green-800 border-green-500 bg-green-500/20 px-3 py-3 font-semibold text-xs"
+        >
+          <Sparkles className="size-3" />
+          100% free — forever
+        </Badge>
+        <Badge
+          variant="outline"
+          className="gap-1.5 rounded-full  px-3 py-3 font-semibold text-xs"
+          title="Users"
+        >
+          <Users className="size-3" />
+          <Suspense fallback={<UserCountSkeleton />}>
+            <UserCount />
+          </Suspense>
+        </Badge>
+      </div>
 
       <h1 className="mx-auto max-w-4xl text-balance text-4xl font-semibold tracking-tight md:text-6xl lg:text-7xl">
         <span className="font-bold">Track your study,</span>
