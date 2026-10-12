@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { AddTrackDialog } from "@/components/AddTrackDialog";
 import { TracksTable } from "@/components/TracksTable";
-import { TrackCharts } from "@/components/TrackCharts";
+import { TrackCharts } from "@/components/ui/TrackCharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import SignOutButton from "@/components/SignOutButton";
 import {
