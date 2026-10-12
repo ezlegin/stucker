@@ -1,6 +1,7 @@
 // app/actions/tracker.ts
 "use server";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { TrackerFormType, trackerFormSchema } from "@/lib/vlidationSchemas";
 import { revalidatePath } from "next/cache";
@@ -20,10 +21,10 @@ function normalizeTime(t: string): string {
 // ---------- CREATE ----------
 export async function createTrack(data: TrackerFormType) {
   try {
-    // const session = await auth();
-    // if (!session?.user?.id) {
-    //   return { success: false as const, error: "Not authenticated" };
-    // }
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false as const, error: "Not authenticated" };
+    }
 
     const parsed = trackerFormSchema.parse(data);
 
@@ -34,11 +35,11 @@ export async function createTrack(data: TrackerFormType) {
         to: normalizeTime(parsed.to),
         duration: calcDuration(parsed.from, parsed.to),
         lesson: parsed.lesson,
-        userId: "session.user.id",
+        userId: session.user.id,
       },
     });
 
-    revalidatePath("/");
+    revalidatePath("/dashboard");
     return { success: true as const, data: track };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -69,7 +70,8 @@ export async function updateTrack(id: number, data: TrackerFormType) {
       },
     });
 
-    revalidatePath("/");
+    revalidatePath("/dashboard");
+
     return { success: true as const, data: track };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -88,7 +90,8 @@ export async function updateTrack(id: number, data: TrackerFormType) {
 export async function deleteTrack(id: number) {
   try {
     await prisma.track.delete({ where: { id } });
-    revalidatePath("/");
+    revalidatePath("/dashboard");
+
     return { success: true as const };
   } catch (error) {
     console.error("deleteTrack error:", error);

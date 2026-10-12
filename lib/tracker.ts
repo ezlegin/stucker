@@ -1,12 +1,21 @@
 "use server";
 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
+import { cache } from "react";
 
+export const getSessionUser = cache(async () => {
+  return (await auth())?.user ?? null;
+});
 // ---------- READ (limited list) ----------
 export async function getTracks(limit = 10) {
+  const user = await getSessionUser();
+  if (!user) return { success: false as const, error: "Not authenticated" };
+
   try {
     const tracks = await prisma.track.findMany({
+      where: { userId: user.id },
       orderBy: [{ date: "desc" }, { from: "desc" }],
       take: limit,
     });
@@ -17,8 +26,11 @@ export async function getTracks(limit = 10) {
   }
 }
 
-// ---------- Weekly stats: last 7 days, per day ----------
+// ---------- Weekly stats ----------
 export async function getWeeklyStats() {
+  const user = await getSessionUser();
+  if (!user) return { success: false as const, error: "Not authenticated" };
+
   try {
     const days = 7;
     const start = new Date();
@@ -26,7 +38,7 @@ export async function getWeeklyStats() {
     start.setHours(0, 0, 0, 0);
 
     const tracks = await prisma.track.findMany({
-      where: { date: { gte: start } },
+      where: { date: { gte: start }, userId: user.id },
     });
 
     const data = Array.from({ length: days }).map((_, i) => {
@@ -54,13 +66,16 @@ export async function getWeeklyStats() {
   }
 }
 
-// ---------- Monthly stats: last 5 weeks, per week ----------
+// ---------- Monthly stats ----------
 export async function getMonthlyStats() {
+  const user = await getSessionUser();
+  if (!user) return { success: false as const, error: "Not authenticated" };
+
   try {
     const weeks = 5;
     const now = new Date();
     const day = now.getDay();
-    const diff = (day === 0 ? -6 : 1) - day; // Monday start
+    const diff = (day === 0 ? -6 : 1) - day;
     const thisWeekStart = new Date(now);
     thisWeekStart.setDate(now.getDate() + diff);
     thisWeekStart.setHours(0, 0, 0, 0);
@@ -69,7 +84,7 @@ export async function getMonthlyStats() {
     rangeStart.setDate(thisWeekStart.getDate() - (weeks - 1) * 7);
 
     const tracks = await prisma.track.findMany({
-      where: { date: { gte: rangeStart } },
+      where: { date: { gte: rangeStart }, userId: user.id },
     });
 
     const data = Array.from({ length: weeks }).map((_, i) => {
@@ -99,13 +114,16 @@ export async function getMonthlyStats() {
 
 // ---------- Lessons studied this week ----------
 export async function getLessonsThisWeek() {
+  const user = await getSessionUser();
+  if (!user) return { success: false as const, error: "Not authenticated" };
+
   try {
     const start = new Date();
     start.setDate(start.getDate() - 6);
     start.setHours(0, 0, 0, 0);
 
     const tracks = await prisma.track.findMany({
-      where: { date: { gte: start } },
+      where: { date: { gte: start }, userId: user.id },
     });
 
     const map = tracks.reduce<Record<string, number>>((acc, t) => {
