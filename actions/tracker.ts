@@ -20,6 +20,11 @@ function normalizeTime(t: string): string {
 // ---------- CREATE ----------
 export async function createTrack(data: TrackerFormType) {
   try {
+    // const session = await auth();
+    // if (!session?.user?.id) {
+    //   return { success: false as const, error: "Not authenticated" };
+    // }
+
     const parsed = trackerFormSchema.parse(data);
 
     const track = await prisma.track.create({
@@ -29,6 +34,7 @@ export async function createTrack(data: TrackerFormType) {
         to: normalizeTime(parsed.to),
         duration: calcDuration(parsed.from, parsed.to),
         lesson: parsed.lesson,
+        userId: "session.user.id",
       },
     });
 

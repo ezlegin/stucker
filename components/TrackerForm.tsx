@@ -1,5 +1,6 @@
 "use client";
 
+import { createTrack, updateTrack } from "@/actions/tracker";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -8,33 +9,25 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
-import { ChevronDownIcon } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
-import { Calendar } from "./ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
-import { toast } from "sonner"; // optional
-import { updateTrack, createTrack } from "@/actions/tracker";
 import {
   LessonType,
   TrackerFormType,
   trackerFormSchema,
 } from "@/lib/vlidationSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { ChevronDownIcon } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { Calendar } from "./ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 
-const lessons: { id: LessonType; title: string }[] = [
-  { id: "math", title: "Math" },
-  { id: "geometry", title: "Geometry" },
-  { id: "physics", title: "Physics" },
-  { id: "chemistry", title: "Chemistry" },
+const lessons: { id: LessonType; title: string; color: string }[] = [
+  { id: "math", title: "Math", color: "var(--chart-1)" },
+  { id: "geometry", title: "Geometry", color: "var(--chart-2)" },
+  { id: "physics", title: "Physics", color: "var(--chart-3)" },
+  { id: "chemistry", title: "Chemistry", color: "var(--chart-4)" },
 ];
 
 type TrackerFormProps = {
@@ -146,32 +139,48 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
               ))}
             </div>
             <div className="text-center text-xs text-muted-foreground">
-              Duration: {duration} minutes ({(duration / 60).toFixed(1)} hours)
+              {duration} minutes{" - "}
+              <span className="font-bold">
+                ({(duration / 60).toFixed(1)} hours)
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Lesson */}
+        {/* Lesson — Radio Group */}
         <Controller
           name="lesson"
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel>Lesson</FieldLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a lesson" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {lessons.map((lesson) => (
-                      <SelectItem key={lesson.id} value={lesson.id}>
-                        {lesson.title}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+
+              <ToggleGroup
+                type="single"
+                value={field.value}
+                onValueChange={(value) => {
+                  // ToggleGroup can emit "" when re-clicking; keep last valid
+                  if (value) field.onChange(value);
+                }}
+                variant="outline"
+                className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3"
+              >
+                {lessons.map((lesson) => (
+                  <ToggleGroupItem
+                    key={lesson.id}
+                    value={lesson.id}
+                    aria-label={lesson.title}
+                    className="flex items-center justify-center gap-2 data-[state=on]:border-primary data-[state=on]:bg-accent cursor-pointer"
+                  >
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ background: lesson.color }}
+                    />
+                    <span className="text-sm font-medium">{lesson.title}</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+
               {fieldState.error && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}

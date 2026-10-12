@@ -1,9 +1,16 @@
 "use client";
 
-import { useTransition } from "react";
-import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { deleteTrack } from "@/actions/tracker";
+import { EditTrackDialog } from "@/components/EditTrackDialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,16 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { deleteTrack } from "@/actions/tracker";
+import { TrackerFormType } from "@/lib/vlidationSchemas";
+import { format } from "date-fns";
+import { Trash2 } from "lucide-react";
+import { useTransition } from "react";
+import { toast } from "sonner";
 
 type Track = {
   id: number;
@@ -70,7 +72,7 @@ export function TracksTable({ tracks }: { tracks: Track[] }) {
                 <TableHead>Lesson</TableHead>
                 <TableHead>Time</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead className="pr-6 text-right"></TableHead>
+                <TableHead className="pr-6 text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -91,18 +93,31 @@ export function TracksTable({ tracks }: { tracks: Track[] }) {
                     {t.from.slice(0, 5)} – {t.to.slice(0, 5)}
                   </TableCell>
                   <TableCell className="text-sm font-medium">
-                    {Math.round(t.duration)}m
+                    {Math.round(t.duration)}m - {(t.duration / 60).toFixed(1)}h
                   </TableCell>
                   <TableCell className="pr-6 text-right">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="opacity-0 transition group-hover:opacity-100"
-                      disabled={isPending}
-                      onClick={() => handleDelete(t.id)}
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <EditTrackDialog
+                        track={{
+                          id: t.id,
+                          date: new Date(t.date),
+                          from: t.from,
+                          to: t.to,
+                          lesson: t.lesson as TrackerFormType["lesson"],
+                        }}
+                      />
+
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="opacity-30 transition group-hover:opacity-100"
+                        disabled={isPending}
+                        onClick={() => handleDelete(t.id)}
+                        aria-label="Delete track"
+                      >
+                        <Trash2 className="size-4 text-muted-foreground group-hover:text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

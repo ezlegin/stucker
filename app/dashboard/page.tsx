@@ -8,6 +8,7 @@ import {
   getMonthlyStats,
   getLessonsThisWeek,
 } from "@/lib/tracker";
+import { redirect } from "next/navigation";
 
 export default async function Page() {
   const [tracksRes, weeklyRes, monthlyRes, lessonsRes] = await Promise.all([
@@ -27,7 +28,7 @@ export default async function Page() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">
-            Welcome, Alireza!
+            {/* Welcome, {session.user.name ?? session.user.email}! */}
           </h1>
           <p className="text-sm text-muted-foreground">
             What did you do today?
