@@ -19,8 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrackerFormType } from "@/lib/vlidationSchemas";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { BookOpen, Trash2 } from "lucide-react";
 import { useTransition } from "react";
@@ -32,33 +30,8 @@ type Track = {
   from: string;
   to: string;
   duration: number;
-  lesson: string;
-};
-
-const LESSON_META: Record<
-  string,
-  { label: string; color: string; pill: string }
-> = {
-  math: {
-    label: "Math",
-    color: "var(--chart-1)",
-    pill: "border-chart-1/30 bg-chart-1/10 text-chart-1",
-  },
-  geometry: {
-    label: "Geometry",
-    color: "var(--chart-2)",
-    pill: "border-chart-2/30 bg-chart-2/10 text-chart-2",
-  },
-  physics: {
-    label: "Physics",
-    color: "var(--chart-3)",
-    pill: "border-chart-3/30 bg-chart-3/10 text-chart-3",
-  },
-  chemistry: {
-    label: "Chemistry",
-    color: "var(--chart-4)",
-    pill: "border-chart-4/30 bg-chart-4/10 text-chart-4",
-  },
+  lessonId: string;
+  lesson: { id: string; name: string; color: string };
 };
 
 export function TracksTable({ tracks }: { tracks: Track[] }) {
@@ -121,12 +94,6 @@ export function TracksTable({ tracks }: { tracks: Track[] }) {
             </TableHeader>
             <TableBody>
               {tracks.map((t) => {
-                const meta = LESSON_META[t.lesson] ?? {
-                  label: t.lesson,
-                  color: "var(--muted-foreground)",
-                  pill: "border-border bg-muted text-muted-foreground",
-                };
-
                 return (
                   <TableRow
                     key={t.id}
@@ -145,16 +112,18 @@ export function TracksTable({ tracks }: { tracks: Track[] }) {
 
                     <TableCell>
                       <span
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
-                          meta.pill,
-                        )}
+                        className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                        style={{
+                          borderColor: `color-mix(in oklab, ${t.lesson.color} 30%, transparent)`,
+                          backgroundColor: `color-mix(in oklab, ${t.lesson.color} 12%, transparent)`,
+                          color: t.lesson.color,
+                        }}
                       >
                         <span
                           className="size-1.5 rounded-full"
-                          style={{ background: meta.color }}
+                          style={{ background: t.lesson.color }}
                         />
-                        {meta.label}
+                        {t.lesson.name}
                       </span>
                     </TableCell>
 
@@ -179,7 +148,7 @@ export function TracksTable({ tracks }: { tracks: Track[] }) {
                             date: new Date(t.date),
                             from: t.from,
                             to: t.to,
-                            lesson: t.lesson as TrackerFormType["lesson"],
+                            lessonId: t.lessonId,
                           }}
                         />
 

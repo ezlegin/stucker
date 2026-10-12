@@ -1,5 +1,6 @@
 "use client";
 
+import { getLessons } from "@/actions/lesson";
 import { createTrack, updateTrack } from "@/actions/tracker";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,11 +11,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import {
-  LessonType,
-  TrackerFormType,
-  trackerFormSchema,
-} from "@/lib/vlidationSchemas";
+import { TrackerFormType, trackerFormSchema } from "@/lib/vlidationSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import {
@@ -26,48 +23,15 @@ import {
   Plus,
   Sparkles,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { AddLessonDialog } from "../AddLessonDialog";
 import { Calendar } from "../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group";
-
-const lessons: {
-  id: LessonType;
-  title: string;
-  color: string;
-  soft: string;
-  ring: string;
-}[] = [
-  {
-    id: "math",
-    title: "Math",
-    color: "var(--chart-1)",
-    soft: "bg-chart-1/10 hover:bg-chart-1/15",
-    ring: "data-[state=on]:ring-chart-1/50 data-[state=on]:bg-chart-1/15",
-  },
-  {
-    id: "geometry",
-    title: "Geometry",
-    color: "var(--chart-2)",
-    soft: "bg-chart-2/10 hover:bg-chart-2/15",
-    ring: "data-[state=on]:ring-chart-2/50 data-[state=on]:bg-chart-2/15",
-  },
-  {
-    id: "physics",
-    title: "Physics",
-    color: "var(--chart-3)",
-    soft: "bg-chart-3/10 hover:bg-chart-3/15",
-    ring: "data-[state=on]:ring-chart-3/50 data-[state=on]:bg-chart-3/15",
-  },
-  {
-    id: "chemistry",
-    title: "Chemistry",
-    color: "var(--chart-4)",
-    soft: "bg-chart-4/10 hover:bg-chart-4/15",
-    ring: "data-[state=on]:ring-chart-4/50 data-[state=on]:bg-chart-4/15",
-  },
-];
+import { DeleteLessonButton } from "../DleteLessonButton";
+type Lesson = { id: string; name: string; color: string };
 
 type TrackerFormProps = {
   initialData?: TrackerFormType & { id: number };
@@ -77,15 +41,47 @@ type TrackerFormProps = {
 export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
   const isEdit = Boolean(initialData?.id);
 
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loadingLessons, setLoadingLessons] = useState(true);
+
   const form = useForm<TrackerFormType>({
     resolver: zodResolver(trackerFormSchema),
     defaultValues: initialData ?? {
       from: new Date().toLocaleTimeString("en-GB").slice(0, 5),
       to: new Date().toLocaleTimeString("en-GB").slice(0, 5),
       date: new Date(),
-      lesson: "math",
+      lessonId: "",
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const res = await getLessons();
+      if (cancelled) return;
+      if (res.success) {
+        setLessons(res.data);
+        // Auto-select the first lesson if nothing is selected
+        if (!form.getValues("lessonId") && res.data.length > 0) {
+          form.setValue("lessonId", res.data[0].id);
+        }
+      }
+      setLoadingLessons(false);
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleLessonCreated(lesson: Lesson) {
+    const res = await getLessons();
+    if (res.success) setLessons(res.data);
+    form.setValue("lessonId", lesson.id, { shouldValidate: true });
+  }
 
   async function onSubmit(data: TrackerFormType) {
     const result = isEdit
@@ -99,7 +95,7 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
           : "Nice work — keep it up.",
       });
       onSuccess?.();
-      if (!isEdit) form.reset();
+      if (!isEdit) form.reset({ ...form.getValues(), lessonId: data.lessonId });
     } else {
       toast.error(result.error);
     }
@@ -110,6 +106,17 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
   const duration = getMinutesFromTime(to) - getMinutesFromTime(from);
 
   const { isSubmitting } = form.formState;
+
+  function handleLessonDeleted(deletedId: string) {
+    const remaining = lessons.filter((l) => l.id !== deletedId);
+    setLessons(remaining);
+
+    if (form.getValues("lessonId") === deletedId) {
+      form.setValue("lessonId", remaining[0]?.id ?? "", {
+        shouldValidate: true,
+      });
+    }
+  }
 
   return (
     <form
@@ -195,9 +202,6 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
                           fieldState.invalid && "border-destructive/60",
                         )}
                       />
-                      {fieldState.error && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
                     </Field>
                   )}
                 />
@@ -217,42 +221,68 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
 
         {/* ── Section: What ─────────────────────────────────────── */}
         <section className="space-y-3">
-          <SectionHeading icon={Sparkles} label="What did you study?" />
+          <div className="flex items-center justify-between">
+            <SectionHeading icon={Sparkles} label="What did you study?" />
+            <AddLessonDialog onCreated={handleLessonCreated} />
+          </div>
 
           <Controller
-            name="lesson"
+            name="lessonId"
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <ToggleGroup
-                  type="single"
-                  value={field.value}
-                  onValueChange={(value) => {
-                    if (value) field.onChange(value);
-                  }}
-                  variant="outline"
-                  className="grid w-full grid-cols-2 gap-2"
-                >
-                  {lessons.map((lesson) => (
-                    <ToggleGroupItem
-                      key={lesson.id}
-                      value={lesson.id}
-                      aria-label={lesson.title}
-                      className={cn(
-                        "group h-12 cursor-pointer justify-start gap-2.5 rounded-lg border bg-card px-3.5 text-sm font-medium transition-all",
-                        "data-[state=on]:ring-2 data-[state=on]:ring-offset-0",
-                        lesson.soft,
-                        lesson.ring,
-                      )}
-                    >
-                      <span
-                        className="size-3 rounded-full ring-2 ring-background transition-transform group-hover:scale-110 data-[state=on]:scale-110"
-                        style={{ background: lesson.color }}
-                      />
-                      <span>{lesson.title}</span>
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
+                {loadingLessons ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-12 animate-pulse rounded-lg bg-muted" />
+                    <div className="h-12 animate-pulse rounded-lg bg-muted" />
+                  </div>
+                ) : lessons.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      You don&apos;t have any lessons yet.
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Click <strong>Add lesson</strong> to create your first
+                      one.
+                    </p>
+                  </div>
+                ) : (
+                  <ToggleGroup
+                    type="single"
+                    value={field.value}
+                    onValueChange={(value) => {
+                      if (value) field.onChange(value);
+                    }}
+                    variant="outline"
+                    className="grid w-full grid-cols-2 gap-2"
+                  >
+                    {lessons.map((lesson) => (
+                      <div key={lesson.id} className="group relative">
+                        <ToggleGroupItem
+                          value={lesson.id}
+                          aria-label={lesson.name}
+                          style={
+                            {
+                              "--lesson-color": lesson.color,
+                            } as React.CSSProperties
+                          }
+                          className="h-12 w-full cursor-pointer justify-start gap-2.5 rounded-lg border bg-card pr-9 pl-3.5 text-sm font-medium transition-all data-[state=on]:border-(--lesson-color) data-[state=on]:ring-2 data-[state=on]:ring-[color-mix(in_oklab,var(--lesson-color)_35%,transparent)] data-[state=on]:ring-offset-0"
+                        >
+                          <span
+                            className="size-3 shrink-0 rounded-full ring-2 ring-background transition-transform group-hover:scale-110"
+                            style={{ background: lesson.color }}
+                          />
+                          <span className="truncate">{lesson.name}</span>
+                        </ToggleGroupItem>
+
+                        <DeleteLessonButton
+                          lesson={lesson}
+                          onDeleted={handleLessonDeleted}
+                        />
+                      </div>
+                    ))}
+                  </ToggleGroup>
+                )}
 
                 {fieldState.error && <FieldError errors={[fieldState.error]} />}
               </Field>
@@ -260,11 +290,10 @@ export function TrackerForm({ initialData, onSuccess }: TrackerFormProps) {
           />
         </section>
 
-        {/* ── CTA ───────────────────────────────────────────────── */}
         <Button
           type="submit"
           size="lg"
-          disabled={isSubmitting || duration <= 0}
+          disabled={isSubmitting || duration <= 0 || !form.watch("lessonId")}
           className="mt-1 h-11 w-full rounded-lg shadow-sm"
         >
           {isSubmitting ? (

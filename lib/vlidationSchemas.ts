@@ -9,7 +9,7 @@ export const trackerFormSchema = z
     date: z.date(),
     from: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Invalid time"),
     to: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, "Invalid time"),
-    lesson: lessonEnum,
+    lessonId: z.string().min(1, "Pick a lesson"),
   })
   .refine(
     (data) => {
@@ -21,3 +21,5 @@ export const trackerFormSchema = z
   );
 
 export type TrackerFormType = z.infer<typeof trackerFormSchema>;
+
+// Login / register schemas unchanged

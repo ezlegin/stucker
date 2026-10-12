@@ -110,7 +110,7 @@ function Hero() {
     <section className="mx-auto max-w-6xl px-6 pt-16 pb-20 text-center md:pt-24 md:pb-28">
       <Badge
         variant="outline"
-        className="mb-6 gap-1.5 rounded-full text-green-800 border-green-500 bg-green-500/20 px-3 py-3 font-semibold text-xs font-normal"
+        className="mb-6 gap-1.5 rounded-full text-green-800 border-green-500 bg-green-500/20 px-3 py-3 font-semibold text-xs"
       >
         <Sparkles className="size-3" />
         100% free — forever

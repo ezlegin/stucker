@@ -35,7 +35,12 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
 type Stat = { label: string; date: string; duration: number };
-type LessonStat = { lesson: string; duration: number };
+type LessonStat = {
+  lessonId: string;
+  name: string;
+  color: string;
+  duration: number;
+};
 
 const chartConfig = {
   duration: {
@@ -43,20 +48,6 @@ const chartConfig = {
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
-
-const lessonColor: Record<string, string> = {
-  math: "var(--chart-1)",
-  geometry: "var(--chart-2)",
-  physics: "var(--chart-3)",
-  chemistry: "var(--chart-4)",
-};
-
-const lessonLabel: Record<string, string> = {
-  math: "Math",
-  geometry: "Geometry",
-  physics: "Physics",
-  chemistry: "Chemistry",
-};
 
 export function TrackCharts({
   weekly,
@@ -167,32 +158,28 @@ function DurationChartBlock({
 /* ------------------------------------------------------------- */
 
 function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
-  // ⭐ single source of truth
   const [view, setView] = useState<"pie" | "radar">("pie");
 
   const total = lessons.reduce((s, l) => s + l.duration, 0);
   const sorted = [...lessons].sort((a, b) => b.duration - a.duration);
 
   const pieData = sorted.map((l) => ({
-    lesson: l.lesson,
-    label: lessonLabel[l.lesson] ?? l.lesson,
+    lesson: l.lessonId,
+    label: l.name,
     duration: l.duration,
-    fill: `var(--color-${l.lesson})`,
+    fill: `var(--color-${l.lessonId})`,
   }));
 
   const radarData = sorted.map((l) => ({
-    lesson: l.lesson,
-    label: lessonLabel[l.lesson] ?? l.lesson,
+    lesson: l.lessonId,
+    label: l.name,
     duration: l.duration,
   }));
 
   const pieConfig = {
     duration: { label: "Hours" },
     ...lessons.reduce<ChartConfig>((acc, l) => {
-      acc[l.lesson] = {
-        label: lessonLabel[l.lesson] ?? l.lesson,
-        color: lessonColor[l.lesson] ?? "var(--chart-1)",
-      };
+      acc[l.lessonId] = { label: l.name, color: l.color };
       return acc;
     }, {}),
   } satisfies ChartConfig;
@@ -317,7 +304,7 @@ function LessonsCard({ lessons }: { lessons: LessonStat[] }) {
                   <div className="flex items-center gap-2">
                     <span
                       className="size-2.5 rounded-full"
-                      style={{ background: lessonColor[l.lesson] }}
+                      style={{ background: "red" }}
                     />
                     <span className="font-medium">{l.label}</span>
                   </div>

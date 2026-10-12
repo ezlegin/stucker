@@ -20,38 +20,33 @@ function normalizeTime(t: string): string {
 
 // ---------- CREATE ----------
 export async function createTrack(data: TrackerFormType) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return { success: false as const, error: "Not authenticated" };
-    }
-
-    const parsed = trackerFormSchema.parse(data);
-
-    const track = await prisma.track.create({
-      data: {
-        date: parsed.date,
-        from: normalizeTime(parsed.from),
-        to: normalizeTime(parsed.to),
-        duration: calcDuration(parsed.from, parsed.to),
-        lesson: parsed.lesson,
-        userId: session.user.id,
-      },
-    });
-
-    revalidatePath("/dashboard");
-    return { success: true as const, data: track };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        success: false as const,
-        error: "Validation failed",
-        issues: error.issues,
-      };
-    }
-    console.error("createTrack error:", error);
-    return { success: false as const, error: "Failed to create track" };
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false as const, error: "Not authenticated" };
   }
+
+  const parsed = trackerFormSchema.parse(data);
+
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: parsed.lessonId },
+  });
+  if (!lesson || lesson.userId !== session.user.id) {
+    return { success: false as const, error: "Invalid lesson" };
+  }
+
+  const track = await prisma.track.create({
+    data: {
+      date: parsed.date,
+      from: normalizeTime(parsed.from),
+      to: normalizeTime(parsed.to),
+      duration: calcDuration(parsed.from, parsed.to),
+      lessonId: parsed.lessonId,
+      userId: session.user.id,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  return { success: true as const, data: track };
 }
 
 // ---------- UPDATE ----------
@@ -66,7 +61,7 @@ export async function updateTrack(id: number, data: TrackerFormType) {
         from: normalizeTime(parsed.from),
         to: normalizeTime(parsed.to),
         duration: calcDuration(parsed.from, parsed.to),
-        lesson: parsed.lesson,
+        lessonId: parsed.lessonId,
       },
     });
 

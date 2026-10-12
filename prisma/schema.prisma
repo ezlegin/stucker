@@ -12,30 +12,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Lessons {
-  math
-  geometry
-  physics
-  chemistry
-}
-
-model Track {
-  id       Int      @id @default(autoincrement())
-  date     DateTime
-  from     String
-  duration Float
-  to       String
-  lesson   Lessons
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([date])
-}
-
 model User {
   id            String    @id @default(uuid())
   name          String
@@ -46,6 +22,7 @@ model User {
   createdAt DateTime  @default(now())
   tracks    Track[]
   accounts  Account[]
+  lessons   Lesson[]
 
   @@map("users")
 }
@@ -68,4 +45,36 @@ model Account {
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
+}
+
+model Track {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  from      String
+  to        String
+  duration  Float
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([userId])
+}
+
+model Lesson {
+  id        String   @id @default(cuid())
+  name      String
+  color     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks Track[]
+
+  @@unique([userId, name])
+  @@index([userId])
 }

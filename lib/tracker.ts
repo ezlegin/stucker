@@ -18,6 +18,9 @@ export async function getTracks(limit = 10) {
       where: { userId: user.id },
       orderBy: [{ date: "desc" }, { from: "desc" }],
       take: limit,
+      include: {
+        lesson: { select: { id: true, name: true, color: true } },
+      },
     });
     return { success: true as const, data: tracks };
   } catch (e) {
@@ -124,16 +127,34 @@ export async function getLessonsThisWeek() {
 
     const tracks = await prisma.track.findMany({
       where: { date: { gte: start }, userId: user.id },
+      include: {
+        lesson: { select: { id: true, name: true, color: true } },
+      },
     });
 
-    const map = tracks.reduce<Record<string, number>>((acc, t) => {
-      acc[t.lesson] = (acc[t.lesson] ?? 0) + t.duration;
-      return acc;
-    }, {});
+    const map = new Map<
+      string,
+      { name: string; color: string; duration: number }
+    >();
 
-    const data = Object.entries(map).map(([lesson, mins]) => ({
-      lesson,
-      duration: Math.round((mins / 60) * 10) / 10,
+    for (const t of tracks) {
+      const existing = map.get(t.lessonId);
+      if (existing) {
+        existing.duration += t.duration;
+      } else {
+        map.set(t.lessonId, {
+          name: t.lesson.name,
+          color: t.lesson.color,
+          duration: t.duration,
+        });
+      }
+    }
+
+    const data = Array.from(map.entries()).map(([lessonId, v]) => ({
+      lessonId,
+      name: v.name,
+      color: v.color,
+      duration: Math.round((v.duration / 60) * 10) / 10,
     }));
 
     return { success: true as const, data };
