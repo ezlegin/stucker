@@ -32,4 +32,7 @@ export const metadata: Metadata = {
     template: "%s · Stucker",
   },
   description: "Track your study sessions.",
+  icons: {
+    icon: "/logos/favicon.svg",
+  },
 };
